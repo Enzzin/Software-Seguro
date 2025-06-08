@@ -1,0 +1,79 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+
+    // Manipulador de erros para mostrar mensagens ao usuário
+    const showError = (message) => {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('d-none');
+    };
+    
+    // Manipulador de sucesso
+    const showSuccess = (message) => {
+        const successDiv = document.getElementById('successMessage');
+        successDiv.textContent = message;
+        successDiv.classList.remove('d-none');
+    };
+
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Impede o recarregamento da página
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Usando fetch para chamar nosso backend
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Falha ao cadastrar.');
+                }
+                
+                showSuccess('Cadastro realizado com sucesso! Verifique seu e-mail para confirmar a conta.');
+                document.getElementById('errorMessage').classList.add('d-none');
+                registerForm.reset();
+
+            } catch (error) {
+                showError(error.message);
+                document.getElementById('successMessage').classList.add('d-none');
+            }
+        });
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Usando fetch para chamar nosso backend
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Email ou senha inválidos.');
+                }
+                
+                // Sucesso! Salva o token e redireciona
+                localStorage.setItem('authToken', data.token);
+                window.location.href = '/dashboard.html'; // Redireciona para a página principal após login
+
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+    }
+});
