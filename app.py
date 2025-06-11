@@ -24,7 +24,6 @@ cognito_client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
 
 #Função para calcular o Secret Hash
 def get_secret_hash(username):
-    """Calcula o SecretHash para requisições ao Cognito que exigem um client secret."""
     msg = username + COGNITO_APP_CLIENT_ID
     dig = hmac.new(
         str(COGNITO_APP_CLIENT_SECRET).encode('utf-8'),
@@ -38,26 +37,34 @@ def get_secret_hash(username):
 @app.route('/api/register', methods=['POST'])
 def register_user():
     data = request.get_json()
+    given_name = data.get('givenName')
     email = data.get('email')
     password = data.get('password')
 
-    if not email or not password:
-        return jsonify({"message": "Email e senha são obrigatórios."}), 400
+    if not all([given_name, email, password]):
+        return jsonify({"message": "Nome, email e senha são obrigatórios."}), 400
 
     try:
         # Calcula o hash secreto para chamada de registro
         secret_hash = get_secret_hash(email)
+
+        user_attributes = [
+            {'Name': 'email', 'Value': email},
+            {'Name': 'given_name', 'Value': given_name}
+        ]
         
         response = cognito_client.sign_up(
             ClientId=COGNITO_APP_CLIENT_ID,
             SecretHash=secret_hash,
             Username=email,
             Password=password,
-            UserAttributes=[{'Name': 'email', 'Value': email}]
+            UserAttributes=user_attributes
         )
         return jsonify({"message": "Usuário cadastrado com sucesso. Verifique seu e-mail."}), 201
     except cognito_client.exceptions.UsernameExistsException:
         return jsonify({"message": "Este email já está em uso."}), 409
+    except cognito_client.exceptions.InvalidParameterException as e:
+        return jsonify({"message": f"Erro de parâmetro inválido: {str(e)}"}), 400
     except cognito_client.exceptions.InvalidPasswordException:
         return jsonify({"message": "A senha não atende aos requisitos de segurança."}), 400
     except Exception as e:

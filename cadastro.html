@@ -15,6 +15,10 @@
                         <h3 class="card-title text-center mb-4">Crie sua Conta</h3>
                         <form id="registerForm">
                             <div class="mb-3">
+                                <label for="givenName" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="givenName" required>
+                            </div>
+                            <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" required>
                             </div>
@@ -22,6 +26,10 @@
                                 <label for="password" class="form-label">Senha</label>
                                 <input type="password" class="form-control" id="password" minlength="8" required>
                                 <div class="form-text">A senha deve ter no mínimo 8 caracteres, incluindo maiúsculas, minúsculas, números e símbolos.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Confirmar Senha</label>
+                                <input type="password" class="form-control" id="confirmPassword" minlength="8" required>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary">Cadastrar</button>
