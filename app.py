@@ -70,6 +70,34 @@ def register_user():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
+@app.route('/api/confirm', methods=['POST'])
+def confirm_user():
+    data = request.get_json()
+    email = data.get('email')
+    confirmation_code = data.get('confirmationCode')
+
+    if not all([email, confirmation_code]):
+        return jsonify({"message": "Email e código de confirmação são obrigatórios."}), 400
+
+    try:
+        secret_hash = get_secret_hash(email)
+        response = cognito_client.confirm_sign_up(
+            ClientId=COGNITO_APP_CLIENT_ID,
+            SecretHash=secret_hash,
+            Username=email,
+            ConfirmationCode=confirmation_code
+        )
+        return jsonify({"message": "Conta confirmada com sucesso!"}), 200
+    except cognito_client.exceptions.CodeMismatchException:
+        return jsonify({"message": "Código de confirmação inválido."}), 400
+    except cognito_client.exceptions.ExpiredCodeException:
+        return jsonify({"message": "O código de confirmação expirou. Solicite um novo."}), 400
+    except cognito_client.exceptions.UserNotFoundException:
+        return jsonify({"message": "Usuário não encontrado."}), 404
+    except cognito_client.exceptions.NotAuthorizedException:
+         return jsonify({"message": "A conta já foi confirmada ou o usuário não pode ser confirmado."}), 400
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login_user():
@@ -102,7 +130,6 @@ def login_user():
         return jsonify({"message": str(e)}), 500
     
 # Rota da API do Chatbot (Conexão Local)
-# Ollama deve estar rodando localmente na porta padrao
 @app.route('/api/chatbot', methods=['POST'])
 def ask_chatbot():
     data = request.get_json()
@@ -114,7 +141,7 @@ def ask_chatbot():
     try:
         # Chama o modelo Ollama rodando localmente
         response = ollama.chat(
-            model='llama3',
+            model='llama3.2',
             messages=[{'role': 'user', 'content': user_message}]
         )
         
@@ -125,6 +152,7 @@ def ask_chatbot():
         print(f"Error calling Ollama: {e}")
         return jsonify({"error": "Não foi possível conectar ao serviço do chatbot. Verifique se o Ollama está em execução."}), 500
 
+
 @app.route('/')
 @app.route('/login.html')
 def login_page():
@@ -134,6 +162,10 @@ def login_page():
 def register_page():
     return render_template('cadastro.html')
     
+@app.route('/confirm.html')
+def confirm_page():
+    return render_template('confirm.html')
+
 @app.route('/chatbot.html')
 def chatbot_page():
     return render_template('chatbot.html')
