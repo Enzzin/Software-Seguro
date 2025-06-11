@@ -1,27 +1,30 @@
 import boto3
 from flask import Flask, request, jsonify, render_template
 import os
-import hmac
-import hashlib
+import ollama #biblioteca do Ollama
+import hmac  
+import hashlib 
 import base64 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, static_folder='.', static_url_path='', template_folder='.')
 
 #Configuração do Cognito
 COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID')
 COGNITO_APP_CLIENT_ID = os.environ.get('COGNITO_APP_CLIENT_ID')
-COGNITO_APP_CLIENT_SECRET = os.environ.get('COGNITO_APP_CLIENT_SECRET') 
+COGNITO_APP_CLIENT_SECRET = os.environ.get('COGNITO_APP_CLIENT_SECRET') # Carrega o Client Secret
 COGNITO_REGION = os.environ.get('COGNITO_REGION', 'us-east-1')
 
-#Validacao das credenciais do Cognito
-if not all([COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID, COGNITO_APP_CLIENT_SECRET]):
-    raise RuntimeError("As variáveis de ambiente do Cognito não foram configuradas corretamente.")
+if not all([COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID, COGNITO_APP_CLIENT_SECRET, COGNITO_REGION]):
+    raise RuntimeError("Variáveis de ambiente do Cognito não foram carregadas. Verifique seu arquivo .env")
 
 cognito_client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
 
-#calcular o Secret Hash
+#Função para calcular o Secret Hash
 def get_secret_hash(username):
-    """Calcula o SecretHash para requisições ao Cognito."""
+    """Calcula o SecretHash para requisições ao Cognito que exigem um client secret."""
     msg = username + COGNITO_APP_CLIENT_ID
     dig = hmac.new(
         str(COGNITO_APP_CLIENT_SECRET).encode('utf-8'),
@@ -30,7 +33,7 @@ def get_secret_hash(username):
     ).digest()
     return base64.b64encode(dig).decode()
 
-#Rotas da API (Controller)
+#Rotas da API de Autenticacao
 
 @app.route('/api/register', methods=['POST'])
 def register_user():
@@ -42,7 +45,7 @@ def register_user():
         return jsonify({"message": "Email e senha são obrigatórios."}), 400
 
     try:
-        #Adiciona o SecretHash na 
+        # Calcula o hash secreto para chamada de registro
         secret_hash = get_secret_hash(email)
         
         response = cognito_client.sign_up(
@@ -77,7 +80,7 @@ def login_user():
             ClientId=COGNITO_APP_CLIENT_ID,
             AuthFlow='USER_PASSWORD_AUTH',
             AuthParameters={
-                'USERNAME': email,
+                'USERNAME': email, 
                 'PASSWORD': password,
                 'SECRET_HASH': secret_hash
             }
@@ -90,14 +93,31 @@ def login_user():
          return jsonify({"message": "Usuário não confirmado. Por favor, verifique seu e-mail."}), 401
     except Exception as e:
         return jsonify({"message": str(e)}), 500
-
-
-#Rota da API do Chatbot (Conexão Local), dava pra fazer pela AWS mas fiz o simples
+    
+# Rota da API do Chatbot (Conexão Local)
+# Ollama deve estar rodando localmente na porta padrao
 @app.route('/api/chatbot', methods=['POST'])
 def ask_chatbot():
-    pass
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({"error": "A 'message' is required."}), 400
 
-#Rotas para as Páginas HTML
+    user_message = data['message']
+
+    try:
+        # Chama o modelo Ollama rodando localmente
+        response = ollama.chat(
+            model='llama3',
+            messages=[{'role': 'user', 'content': user_message}]
+        )
+        
+        reply = response['message']['content']
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        print(f"Error calling Ollama: {e}")
+        return jsonify({"error": "Não foi possível conectar ao serviço do chatbot. Verifique se o Ollama está em execução."}), 500
+
 @app.route('/')
 @app.route('/login.html')
 def login_page():
@@ -114,6 +134,7 @@ def chatbot_page():
 @app.route('/dashboard.html')
 def dashboard():
     return "<h1>Bem-vindo ao Dashboard! (Página Protegida)</h1>"
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
