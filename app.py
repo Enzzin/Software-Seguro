@@ -1,18 +1,36 @@
 import boto3
 from flask import Flask, request, jsonify, render_template
 import os
-import ollama #biblioteca do Ollama
+import hmac
+import hashlib
+import base64 
 
 app = Flask(__name__, static_folder='.', static_url_path='', template_folder='.')
 
 #Configuração do Cognito
 COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID')
 COGNITO_APP_CLIENT_ID = os.environ.get('COGNITO_APP_CLIENT_ID')
+COGNITO_APP_CLIENT_SECRET = os.environ.get('COGNITO_APP_CLIENT_SECRET') 
 COGNITO_REGION = os.environ.get('COGNITO_REGION', 'us-east-1')
+
+#Validacao das credenciais do Cognito
+if not all([COGNITO_USER_POOL_ID, COGNITO_APP_CLIENT_ID, COGNITO_APP_CLIENT_SECRET]):
+    raise RuntimeError("As variáveis de ambiente do Cognito não foram configuradas corretamente.")
 
 cognito_client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
 
-#Rotas da API de Autenticação
+#calcular o Secret Hash
+def get_secret_hash(username):
+    """Calcula o SecretHash para requisições ao Cognito."""
+    msg = username + COGNITO_APP_CLIENT_ID
+    dig = hmac.new(
+        str(COGNITO_APP_CLIENT_SECRET).encode('utf-8'),
+        msg=str(msg).encode('utf-8'),
+        digestmod=hashlib.sha256
+    ).digest()
+    return base64.b64encode(dig).decode()
+
+#Rotas da API (Controller)
 
 @app.route('/api/register', methods=['POST'])
 def register_user():
@@ -24,8 +42,12 @@ def register_user():
         return jsonify({"message": "Email e senha são obrigatórios."}), 400
 
     try:
+        #Adiciona o SecretHash na 
+        secret_hash = get_secret_hash(email)
+        
         response = cognito_client.sign_up(
             ClientId=COGNITO_APP_CLIENT_ID,
+            SecretHash=secret_hash,
             Username=email,
             Password=password,
             UserAttributes=[{'Name': 'email', 'Value': email}]
@@ -49,10 +71,16 @@ def login_user():
         return jsonify({"message": "Email e senha são obrigatórios."}), 400
 
     try:
+        secret_hash = get_secret_hash(email)
+        
         response = cognito_client.initiate_auth(
             ClientId=COGNITO_APP_CLIENT_ID,
             AuthFlow='USER_PASSWORD_AUTH',
-            AuthParameters={'USERNAME': email, 'PASSWORD': password}
+            AuthParameters={
+                'USERNAME': email,
+                'PASSWORD': password,
+                'SECRET_HASH': secret_hash
+            }
         )
         access_token = response['AuthenticationResult']['AccessToken']
         return jsonify({"token": access_token}), 200
@@ -63,32 +91,13 @@ def login_user():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
-# Rota da API do Chatbot (Conexão Local)
-# Ollama deve estar rodando localmente na porta padrao
+
+#Rota da API do Chatbot (Conexão Local), dava pra fazer pela AWS mas fiz o simples
 @app.route('/api/chatbot', methods=['POST'])
 def ask_chatbot():
-    data = request.get_json()
-    if not data or 'message' not in data:
-        return jsonify({"error": "A 'message' is required."}), 400
+    pass
 
-    user_message = data['message']
-
-    try:
-        # Chama o modelo Ollama rodando localmente
-        response = ollama.chat(
-            model='llama3.2', #Caso o Ollama atualize o modelo só mudar aqui q funciona suave dnv
-            messages=[{'role': 'user', 'content': user_message}]
-        )
-        
-        # Retorna o conteúdo da resposta do chatbot
-        reply = response['message']['content']
-        return jsonify({"reply": reply})
-
-    except Exception as e:
-        print(f"Error calling Ollama: {e}")
-        return jsonify({"error": "Não foi possível conectar ao serviço do chatbot. Verifique se o Ollama está em execução."}), 500
-
-# --- Rotas para servir as Páginas HTML ---
+#Rotas para as Páginas HTML
 @app.route('/')
 @app.route('/login.html')
 def login_page():
@@ -105,7 +114,6 @@ def chatbot_page():
 @app.route('/dashboard.html')
 def dashboard():
     return "<h1>Bem-vindo ao Dashboard! (Página Protegida)</h1>"
-
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
