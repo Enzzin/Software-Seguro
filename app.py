@@ -1,17 +1,18 @@
 import boto3
 from flask import Flask, request, jsonify, render_template
 import os
+import ollama #biblioteca do Ollama
 
 app = Flask(__name__, static_folder='.', static_url_path='', template_folder='.')
 
+#Configuração do Cognito
 COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID')
 COGNITO_APP_CLIENT_ID = os.environ.get('COGNITO_APP_CLIENT_ID')
 COGNITO_REGION = os.environ.get('COGNITO_REGION', 'us-east-1')
 
-# Inicializa o cliente do Cognito
 cognito_client = boto3.client('cognito-idp', region_name=COGNITO_REGION)
 
-# --- Rotas da API (Nosso Controlador) ---
+#Rotas da API de Autenticação
 
 @app.route('/api/register', methods=['POST'])
 def register_user():
@@ -23,7 +24,6 @@ def register_user():
         return jsonify({"message": "Email e senha são obrigatórios."}), 400
 
     try:
-        # Tenta criar o usuário no Cognito User Pool
         response = cognito_client.sign_up(
             ClientId=COGNITO_APP_CLIENT_ID,
             Username=email,
@@ -49,13 +49,11 @@ def login_user():
         return jsonify({"message": "Email e senha são obrigatórios."}), 400
 
     try:
-        # Tenta autenticar o usuário
         response = cognito_client.initiate_auth(
             ClientId=COGNITO_APP_CLIENT_ID,
             AuthFlow='USER_PASSWORD_AUTH',
             AuthParameters={'USERNAME': email, 'PASSWORD': password}
         )
-        # Se o login for bem-sucedido, o Cognito retorna um token de acesso
         access_token = response['AuthenticationResult']['AccessToken']
         return jsonify({"token": access_token}), 200
     except cognito_client.exceptions.NotAuthorizedException:
@@ -65,7 +63,32 @@ def login_user():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
-# --- Rotas para servir as Views (páginas HTML) ---
+# Rota da API do Chatbot (Conexão Local)
+# Ollama deve estar rodando localmente na porta padrao
+@app.route('/api/chatbot', methods=['POST'])
+def ask_chatbot():
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({"error": "A 'message' is required."}), 400
+
+    user_message = data['message']
+
+    try:
+        # Chama o modelo Ollama rodando localmente
+        response = ollama.chat(
+            model='llama3.2', #Caso o Ollama atualize o modelo só mudar aqui q funciona suave dnv
+            messages=[{'role': 'user', 'content': user_message}]
+        )
+        
+        # Retorna o conteúdo da resposta do chatbot
+        reply = response['message']['content']
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        print(f"Error calling Ollama: {e}")
+        return jsonify({"error": "Não foi possível conectar ao serviço do chatbot. Verifique se o Ollama está em execução."}), 500
+
+# --- Rotas para servir as Páginas HTML ---
 @app.route('/')
 @app.route('/login.html')
 def login_page():
@@ -74,11 +97,13 @@ def login_page():
 @app.route('/cadastro.html')
 def register_page():
     return render_template('cadastro.html')
+    
+@app.route('/chatbot.html')
+def chatbot_page():
+    return render_template('chatbot.html')
 
-# Rota protegida de exemplo
 @app.route('/dashboard.html')
 def dashboard():
-    # Aqui você adicionaria a lógica para verificar o token JWT antes de servir a página
     return "<h1>Bem-vindo ao Dashboard! (Página Protegida)</h1>"
 
 
