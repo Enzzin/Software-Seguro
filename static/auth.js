@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('registerForm');
     const confirmForm = document.getElementById('confirmForm');
 
-    // Função para exibir mensagens de erro para um formulário específico
+    // Function to display error messages for a specific form
     const showError = (message, formId) => {
         const errorDiv = document.querySelector(`#${formId} ~ #errorMessage`);
         if (errorDiv) {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Função para exibir mensagens de sucesso para um formulário específico
+    // Function to display success messages for a specific form
     const showSuccess = (message, formId) => {
         const successDiv = document.querySelector(`#${formId} ~ #successMessage`);
         if (successDiv) {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Lógica para o formulário de registro
+    // Registration form logic
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmPassword = document.getElementById('confirmPassword').value;
 
             if (password !== confirmPassword) {
-                showError('As senhas não coincidem.', 'registerForm');
+                showError('Passwords do not match.', 'registerForm');
                 return;
             }
 
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message);
                 
-                showSuccess('Cadastro realizado! Redirecionando para a confirmação...', 'registerForm');
+                showSuccess('Registration successful! Redirecting to confirmation...', 'registerForm');
                 setTimeout(() => {
                     window.location.href = `/confirm.html?email=${encodeURIComponent(email)}`;
                 }, 2000);
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para o formulário de confirmação
+    // Confirmation form logic
     if (confirmForm) {
         const urlParams = new URLSearchParams(window.location.search);
         const emailFromUrl = urlParams.get('email');
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message);
                 
-                showSuccess('Conta confirmada com sucesso! Redirecionando para o login...', 'confirmForm');
+                showSuccess('Account confirmed successfully! Redirecting to login...', 'confirmForm');
                 setTimeout(() => {
                     window.location.href = '/login.html';
                 }, 2000);
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para o formulário de login
+    // Login form logic
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Email ou senha inválidos.');
+                    throw new Error(data.message || 'Invalid email or password.');
                 }
                 
                 localStorage.setItem('authToken', data.token);

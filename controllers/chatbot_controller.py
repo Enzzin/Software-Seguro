@@ -17,4 +17,4 @@ def ask_chatbot():
         return jsonify({"reply": reply})
     except Exception as e:
         print(f"Error calling Ollama: {e}")
-        return jsonify({"error": "Não foi possível conectar ao serviço do chatbot. Verifique se o Ollama está em execução."}), 500 
+        return jsonify({"error": "Unable to connect to the chatbot service. Please check if Ollama is running."}), 500 

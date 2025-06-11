@@ -9,14 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = userInput.value.trim();
         if (!message) return;
 
-        // Mostra a mensagem do usuário
+        // Show user message
         appendMessage(message, 'user');
         
         userInput.value = '';
         userInput.disabled = true;
 
         try {
-            // Chama a API do backend
+            // Call backend API
             const response = await fetch('/api/chatbot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -25,12 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || 'Ocorreu um erro desconhecido.');
+                throw new Error(errorData.error || 'An unknown error occurred.');
             }
 
             const data = await response.json();
             
-            // Mostra a resposta do bot
+            // Show bot response
             appendMessage(data.reply, 'bot');
             errorMessage.classList.add('d-none');
 

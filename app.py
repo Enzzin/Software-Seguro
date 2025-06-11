@@ -14,9 +14,9 @@ app.register_blueprint(chatbot_controller)
 def login_page():
     return render_template('login.html')
 
-@app.route('/cadastro.html')
+@app.route('/register.html')
 def register_page():
-    return render_template('cadastro.html')
+    return render_template('register.html')
     
 @app.route('/confirm.html')
 def confirm_page():
@@ -28,7 +28,7 @@ def chatbot_page():
 
 @app.route('/dashboard.html')
 def dashboard():
-    return "<h1>Bem-vindo ao Dashboard! (Página Protegida)</h1>"
+    return "<h1>Welcome to Dashboard! (Protected Page)</h1>"
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
