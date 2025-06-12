@@ -6,6 +6,8 @@ chatbot_model = ChatbotModel()
 
 @chatbot_controller.route('/api/chatbot', methods=['POST'])
 def ask_chatbot():
+
+
     data = request.get_json()
     if not data or 'message' not in data:
         return jsonify({"error": "A 'message' is required."}), 400
