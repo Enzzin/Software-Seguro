@@ -39,6 +39,8 @@ class Config:
     OLLAMA_HOST  = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 
+    PUBLIC_URL = os.getenv("PUBLIC_URL", "http://localhost:5000")
+
 
 class ProductionConfig(Config):
     DEBUG = False

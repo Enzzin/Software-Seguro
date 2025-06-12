@@ -5,6 +5,7 @@ Phishing-campaign controller – totalmente funcional
 • Não usa Flask-Login; confia no e-mail salvo em session
 • Gera, lista, exporta e rastreia campanhas
 """
+from flask import current_app
 from datetime import datetime, timedelta
 import hashlib, secrets, logging
 from io import StringIO
@@ -107,8 +108,13 @@ def generate_links():
         )
         db.session.add(camp)
 
+
+    cfg = current_app.config
+    public_url = cfg["PUBLIC_URL"]
+
+
     links = []
-    base  = _host()
+    base  = public_url
     for addr in emails:
         hsh  = hashlib.sha256(f"{camp_id}:{addr}:{secrets.token_hex(8)}".encode()).hexdigest()
         url  = f"{base}/p/{hsh}?e={addr}&c={camp_id}&target={target}"
