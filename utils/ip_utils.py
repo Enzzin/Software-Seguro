@@ -64,45 +64,47 @@ def get_real_ip(request):
 
 
 @lru_cache(maxsize=1000)
-def get_geolocation(ip_address):
+def get_geolocation(ip_str: str) -> dict:
     """
-    Get geolocation information for an IP address
-    Uses ip-api.com free service (limited to 45 requests per minute)
-    
+    Devolve informações de geolocalização para um endereço IP,
+    usando o serviço gratuito ip-api.com (≈ 45 req/min).
+
     Args:
-        ip_address: IP address string
-        
+        ip_str (str): Endereço IP em formato texto.
+
     Returns:
-        dict: Geolocation information
+        dict: Dados de geolocalização (código-país, cidade, etc.)
     """
     try:
-        # Skip geolocation for private IPs
-        parsed_ip = ip_address(ip_address)
-        if any(parsed_ip in range for range in PRIVATE_IP_RANGES):
-            return {'country': 'Local', 'city': 'Private Network'}
-        
-        # Make API request
-        response = requests.get(
-            f'http://ip-api.com/json/{ip_address}',
+        # 1) ignora IPs privados/loopback
+        parsed_ip = ip_address(ip_str)
+        if any(parsed_ip in net for net in PRIVATE_IP_RANGES):
+            return {"country": "Local", "city": "Private Network"}
+
+        # 2) consulta o serviço externo
+        resp = requests.get(
+            f"http://ip-api.com/json/{ip_str}",
             timeout=2,
-            params={'fields': 'country,countryCode,city,regionName,lat,lon'}
+            params={"fields": "status,country,countryCode,city,regionName,lat,lon"},
         )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('status') == 'success':
+
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("status") == "success":
                 return {
-                    'country': data.get('countryCode', 'UN'),
-                    'country_name': data.get('country', 'Unknown'),
-                    'city': data.get('city', 'Unknown'),
-                    'region': data.get('regionName', 'Unknown'),
-                    'latitude': data.get('lat'),
-                    'longitude': data.get('lon')
+                    "country": data.get("countryCode", "UN"),
+                    "country_name": data.get("country", "Unknown"),
+                    "city": data.get("city", "Unknown"),
+                    "region": data.get("regionName", "Unknown"),
+                    "latitude": data.get("lat"),
+                    "longitude": data.get("lon"),
                 }
-    except Exception as e:
-        logger.warning(f"Failed to get geolocation for {ip_address}: {str(e)}")
-    
-    return {'country': 'UN', 'city': 'Unknown'}
+    except Exception as exc:   # noqa: BLE001 – loga e devolve fallback
+        logger.warning("Failed to get geolocation for %s: %s", ip_str, exc)
+
+    # Fallback genérico
+    return {"country": "UN", "city": "Unknown"}
+
 
 
 def is_valid_ip(ip_string):
