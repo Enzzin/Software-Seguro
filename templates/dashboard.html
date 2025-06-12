@@ -1,9 +1,225 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | BrazucaPhish</title>
-</head>
-<body">
-    <p>ta funfando paii</p>
+{% extends "base.html" %}
+{% block title %}Dashboard – BrazucaPhish{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-line"></i> Phishing Campaign Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Campaigns</h6>
+                        <h2 class="mb-0" id="totalCampaigns">0</h2>
+                    </div>
+                    <i class="fas fa-bullhorn fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Total Clicks</h6>
+                        <h2 class="mb-0" id="totalClicks">0</h2>
+                    </div>
+                    <i class="fas fa-mouse-pointer fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Unique Victims</h6>
+                        <h2 class="mb-0" id="uniqueVictims">0</h2>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Success Rate</h6>
+                        <h2 class="mb-0" id="successRate">0%</h2>
+                    </div>
+                    <i class="fas fa-percentage fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Campaign Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> Create New Campaign
+                </h5>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#campaignForm">
+                    <i class="fas fa-chevron-down"></i> Expand
+                </button>
+            </div>
+            <div class="collapse" id="campaignForm">
+                <div class="card-body">
+                    <form id="newCampaignForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="campaignName" class="form-label">Campaign Name</label>
+                                    <input type="text" class="form-control" id="campaignName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="targetUrl" class="form-label">Target URL (after click)</label>
+                                    <input type="url" class="form-control" id="targetUrl"
+                                           placeholder="https://example.com/phishing-awareness">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="campaignDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="campaignDescription" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="targetEmails" class="form-label">Target Emails (one per line)</label>
+                            <textarea class="form-control" id="targetEmails" rows="4" required
+                                      placeholder="user1@example.com&#10;user2@example.com"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-rocket"></i> Generate Phishing Links
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Campaigns -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Active Campaigns
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>Campaign Name</th>
+                            <th>Created</th>
+                            <th>Clicks</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="campaignsTable">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Loading campaigns...
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Click Timeline Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area"></i> Click Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="clickChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generated Links Modal -->
+<div class="modal fade" id="linksModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generated Phishing Links</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Share these links with your targets. Each click will be tracked.
+                </div>
+                <div id="generatedLinks"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyAllLinks()">
+                    <i class="fas fa-copy"></i> Copy All Links
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Campaign Details Modal -->
+<div class="modal fade" id="campaignModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Campaign Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="campaignDetails">
+                <i class="fas fa-spinner fa-spin"></i> Loading...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="exportCampaign()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

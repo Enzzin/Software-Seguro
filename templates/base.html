@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="{% block meta_description %}BrazucaPhish – Security Awareness Platform{% endblock %}">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options"        content="DENY">
+
+    <title>{% block title %}BrazucaPhish{% endblock %}</title>
+
+    <!-- Bootstrap & FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/"><i class="fas fa-fish"></i> BrazucaPhish</a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto">
+        {% if session.get('auth_token') %}
+          <li class="nav-item">
+              <span class="navbar-text me-3 fw-semibold">
+                  {{ session.get('user_name', 'User') }}
+              </span>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('dashboard') }}">
+                 <i class="fas fa-chart-line"></i> Dashboard
+              </a>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('chatbot_page') }}">
+                 <i class="fas fa-robot"></i> Chatbot
+              </a>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth_controller.logout') }}">
+                 <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('login_page') }}">
+                 <i class="fas fa-sign-in-alt"></i> Login
+              </a>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('register_page') }}">
+                 <i class="fas fa-user-plus"></i> Register
+              </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ 'danger' if cat=='error' else cat }} alert-dismissible fade show">
+            {{ msg }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main class="container mt-4">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer mt-auto py-3 bg-dark text-light">
+    <div class="container text-center">
+        <small>© 2025 BrazucaPhish</small>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
