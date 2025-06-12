@@ -27,3 +27,5 @@ geoip2==4.8.0
 # Ollama
 ollama==0.1.7
 
+# Tests Coverage
+pytest==8.4.0
