@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models.auth_model import AuthModel
 
 auth_controller = Blueprint('auth_controller', __name__)
@@ -61,6 +61,7 @@ def login_user():
     try:
         response = auth_model.login_user(email, password)
         access_token = response['AuthenticationResult']['AccessToken']
+        session['auth_token'] = access_token
         return jsonify({"token": access_token}), 200
     except auth_model.cognito_client.exceptions.NotAuthorizedException:
         return jsonify({"message": "Incorrect email or password."}), 401
