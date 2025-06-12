@@ -11,6 +11,7 @@ services:
       db:
         condition: service_healthy
     volumes:
+      - .:/app
       - ./static:/app/static:ro
       - ./templates:/app/templates:ro
     ports:
@@ -61,6 +62,19 @@ services:
     networks:
       - brazuca_network
     restart: unless-stopped
+
+  migrate:
+    build: .
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: flask db upgrade
+    networks:
+      - brazuca_network
+    restart: "no"
 
 networks:
   brazuca_network:
