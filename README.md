@@ -65,11 +65,15 @@ O projeto é conteinerizado com Docker e utiliza as seguintes tecnologias:
 
 Este projeto foi desenvolvido com foco em práticas de desenvolvimento seguro, prevenindo as principais vulnerabilidades da web.
 
-* [cite_start]**CWE-522 (Credenciais Insuficientemente Protegidas):** A aplicação utiliza o **Amazon Cognito** para todo o gerenciamento de contas, delegando o armazenamento seguro de senhas e o fluxo de autenticação para um serviço especializado da AWS. 
-* [cite_start]**CWE-798 (Uso de Credenciais "Hard-coded"):** Todas as credenciais e segredos da aplicação são gerenciados através de um arquivo **`.env`**, que é carregado no ambiente de execução e mantido fora do controle de versão do Git. 
-* [cite_start]**CWE-89 (SQL Injection):** O uso do **SQLAlchemy ORM** em todas as interações com o banco de dados impossibilita a ocorrência de injeção de SQL, pois todas as entradas são devidamente parametrizadas. 
-* [cite_start]**CWE-223 (Omissão de Informação de Segurança Relevante):** O sistema de **logs** está configurado para registrar eventos importantes da aplicação sem revelar informações sensíveis do usuário ou da sessão, garantindo a rastreabilidade sem comprometer a privacidade. 
-* **CWE-284 (Controle de Acesso Inadequado):** A rota `/api/phish/stats` garante que um usuário só possa acessar os dados de suas próprias campanhas. [cite_start]Isso é feito verificando a sessão do usuário e filtrando as consultas ao banco de dados com base no e-mail do proprietário, impedindo o acesso a dados de outros usuários. 
+* **CWE-522 (Credenciais Insuficientemente Protegidas):** A aplicação utiliza o **Amazon Cognito** para todo o gerenciamento de contas, delegando o armazenamento seguro de senhas e o fluxo de autenticação para um serviço especializado da AWS.
+
+* **CWE-798 (Uso de Credenciais "Hard-coded"):** Todas as credenciais e segredos da aplicação são gerenciados através de um arquivo **`.env`**, que é carregado no ambiente de execução e mantido fora do controle de versão do Git.
+
+* **CWE-89 (SQL Injection):** O uso do **SQLAlchemy ORM** em todas as interações com o banco de dados impossibilita a ocorrência de injeção de SQL, pois todas as entradas são devidamente parametrizadas.
+
+* **CWE-223 (Omissão de Informação de Segurança Relevante):** O sistema de **logs** está configurado para registrar eventos importantes da aplicação sem revelar informações sensíveis do usuário ou da sessão, garantindo a rastreabilidade sem comprometer a privacidade.
+
+* **CWE-284 (Controle de Acesso Inadequado):** A rota **/api/phish/stats** garante que um usuário só possa acessar os dados de suas próprias campanhas. Isso é feito verificando a sessão do usuário e filtrando as consultas ao banco de dados com base no e-mail do proprietário, impedindo o acesso a dados de outros usuários.
 
 ---
 _© 2025 BrazucaPhish_
